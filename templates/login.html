@@ -1,1 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login — Money Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --green:      #00c896;
+      --green-dark: #00a87e;
+      --bg:         #0b0f1a;
+      --surface:    #131826;
+      --card:       #1a2035;
+      --border:     #252d45;
+      --text:       #e8eaf6;
+      --muted:      #6b7599;
+      --error:      #ff5e72;
+      --info:       #4fc3f7;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 70% 0%, rgba(0,200,150,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 50% at 10% 90%, rgba(0,200,150,0.05) 0%, transparent 50%);
+    }
+
+    .container {
+      display: flex;
+      width: 100%;
+      max-width: 900px;
+      min-height: 560px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.5);
+    }
+
+    /* Left Panel */
+    .panel-left {
+      flex: 1;
+      background: linear-gradient(145deg, #0d1f2d 0%, #0b2a1e 50%, #091a14 100%);
+      padding: 52px 44px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+    .panel-left::before {
+      content: '';
+      position: absolute;
+      width: 320px; height: 320px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,200,150,0.15) 0%, transparent 70%);
+      top: -60px; left: -60px;
+    }
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--green);
+      letter-spacing: -0.5px;
+      position: relative;
+    }
+    .logo span { color: var(--text); }
+    .panel-left-content { position: relative; }
+    .panel-left h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 34px;
+      font-weight: 700;
+      line-height: 1.25;
+      margin-bottom: 16px;
+    }
+    .panel-left p {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.7;
+      margin-bottom: 32px;
+    }
+    .features { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    .features li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: #a0aec0;
+    }
+    .features li::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      flex-shrink: 0;
+    }
+
+    /* Right Panel */
+    .panel-right {
+      flex: 1;
+      padding: 52px 44px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .panel-right h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .panel-right .subtitle {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+    .panel-right .subtitle a {
+      color: var(--green);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    /* Alerts */
+    .alerts { margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px; }
+    .alert {
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      font-weight: 500;
+    }
+    .alert-error   { background: rgba(255,94,114,0.12); color: var(--error); border: 1px solid rgba(255,94,114,0.2); }
+    .alert-success { background: rgba(0,200,150,0.12); color: var(--green);  border: 1px solid rgba(0,200,150,0.2); }
+    .alert-info    { background: rgba(79,195,247,0.12); color: var(--info);   border: 1px solid rgba(79,195,247,0.2); }
+
+    /* Form */
+    .form-group { margin-bottom: 18px; }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #9aa5c4;
+      margin-bottom: 7px;
+      letter-spacing: 0.3px;
+    }
+    input[type="email"],
+    input[type="password"],
+    input[type="text"] {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 14.5px;
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(0,200,150,0.12);
+    }
+    input::placeholder { color: var(--muted); }
+
+    .form-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 22px;
+    }
+    .remember {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 13px;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .remember input[type="checkbox"] { accent-color: var(--green); width: 15px; height: 15px; }
+    .forgot { font-size: 13px; color: var(--green); text-decoration: none; }
+    .forgot:hover { text-decoration: underline; }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
+      background: var(--green);
+      color: #0b1a14;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: 'Syne', sans-serif;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+      transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+    }
+    .btn:hover {
+      background: var(--green-dark);
+      box-shadow: 0 6px 20px rgba(0,200,150,0.3);
+      transform: translateY(-1px);
+    }
+    .btn:active { transform: translateY(0); }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 22px 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .register-link {
+      text-align: center;
+      font-size: 13.5px;
+      color: var(--muted);
+    }
+    .register-link a {
+      color: var(--green);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    @media (max-width: 640px) {
+      .panel-left { display: none; }
+      .panel-right { padding: 40px 28px; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Left Branding Panel -->
+  <div class="panel-left">
+    <div class="logo">Money<span>Manager</span></div>
+    <div class="panel-left-content">
+      <h2>Take control of your finances</h2>
+      <p>Track every rupee. Build better habits. Reach your financial goals faster.</p>
+      <ul class="features">
+        <li>Smart expense categorization</li>
+        <li>Monthly budget alerts</li>
+        <li>Visual spending reports</li>
+        <li>Secure & private</li>
+      </ul>
+    </div>
+    <div style="color: var(--muted); font-size: 12px;">© 2025 Money Manager</div>
+  </div>
+
+  <!-- Right Login Panel -->
+  <div class="panel-right">
+    <h1>Welcome back</h1>
+    <p class="subtitle">Don't have an account? <a href="/register">Sign up free</a></p>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="alerts">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="/login">
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email"
+               value="{{ email if email else '' }}"
+               placeholder="you@example.com" required autofocus />
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password"
+               placeholder="Enter your password" required />
+      </div>
+      <div class="form-row">
+        <label class="remember">
+          <input type="checkbox" name="remember_me" /> Remember me
+        </label>
+        <a class="forgot" href="#">Forgot password?</a>
+      </div>
+      <button type="submit" class="btn">Sign In →</button>
+    </form>
+
+    <div class="divider">or</div>
+    <div class="register-link">
+      New here? <a href="/register">Create your free account</a>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
