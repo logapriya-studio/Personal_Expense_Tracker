@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Add Transaction — Money Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    :root{--green:#00c896;--red:#ff5e72;--bg:#0b0f1a;--surf:#131826;--card:#1a2035;--bdr:#252d45;--txt:#e8eaf6;--muted:#6b7599;}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;display:flex;flex-direction:column;}
+    .topnav{display:flex;justify-content:space-between;align-items:center;padding:14px 28px;background:var(--surf);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:10;}
+    .logo{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--green);}
+    .logo span{color:var(--txt);}
+    .nav-right{display:flex;align-items:center;gap:14px;}
+    .nav-email{font-size:12px;color:var(--muted);}
+    .btn-logout{padding:7px 16px;border:1px solid var(--bdr);background:transparent;color:var(--txt);border-radius:8px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+    .layout{display:flex;flex:1;}
+    .sidebar{width:200px;background:var(--surf);border-right:1px solid var(--bdr);padding:24px 0;position:sticky;top:53px;height:calc(100vh - 53px);}
+    .sidebar-label{font-size:10px;color:var(--muted);padding:0 20px;margin:12px 0 6px;letter-spacing:1px;text-transform:uppercase;display:block;}
+    .nav-item{display:flex;align-items:center;gap:11px;padding:10px 20px;font-size:13px;color:var(--muted);cursor:pointer;border-left:3px solid transparent;text-decoration:none;transition:all 0.15s;}
+    .nav-item:hover{color:var(--txt);background:rgba(255,255,255,0.03);}
+    .nav-item.active{color:var(--green);border-left-color:var(--green);background:rgba(0,200,150,0.06);}
+    .main{flex:1;padding:28px 32px;}
+    .page-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:4px;}
+    .page-sub{font-size:12px;color:var(--muted);margin-bottom:24px;}
+    .flash{padding:10px 16px;border-radius:10px;font-size:13px;margin-bottom:16px;}
+    .flash.success{background:rgba(0,200,150,0.1);color:var(--green);border:1px solid rgba(0,200,150,0.2);}
+    .flash.error{background:rgba(255,94,114,0.1);color:var(--red);border:1px solid rgba(255,94,114,0.2);}
+    .form-card{background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:28px;max-width:500px;}
+    .type-toggle{display:flex;gap:10px;margin-bottom:20px;}
+    .type-btn{flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--bdr);background:var(--surf);color:var(--muted);font-size:14px;cursor:pointer;transition:all 0.15s;font-family:'DM Sans',sans-serif;}
+    .type-btn.inc{border-color:var(--green);color:var(--green);background:rgba(0,200,150,0.08);}
+    .type-btn.exp{border-color:var(--red);color:var(--red);background:rgba(255,94,114,0.08);}
+    .f-group{margin-bottom:16px;}
+    .f-label{font-size:11px;color:#9aa5c4;margin-bottom:5px;display:block;}
+    .f-input,.f-select{width:100%;padding:10px 13px;background:var(--surf);border:1.5px solid var(--bdr);border-radius:10px;color:var(--txt);font-size:13px;outline:none;font-family:'DM Sans',sans-serif;transition:border-color 0.2s;}
+    .f-input:focus,.f-select:focus{border-color:var(--green);}
+    .f-select option{background:var(--surf);}
+    .submit-btn{width:100%;padding:12px;background:var(--green);color:#0b1a14;border:none;border-radius:10px;font-size:15px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;margin-top:6px;transition:background 0.2s;}
+    .submit-btn:hover{background:#00a87e;}
+    input[type="hidden"]{display:none;}
+  </style>
+</head>
+<body>
+<div class="topnav">
+  <div class="logo">Money<span>Manager</span></div>
+  <div class="nav-right">
+    <span class="nav-email">{{ user_email }}</span>
+    <a href="/logout"><button class="btn-logout">Logout</button></a>
+  </div>
+</div>
+<div class="layout">
+  <div class="sidebar">
+    <span class="sidebar-label">Menu</span>
+    <a href="/dashboard"       class="nav-item"><span>🏠</span> Dashboard</a>
+    <a href="/add_transaction" class="nav-item active"><span>➕</span> Add Transaction</a>
+    <a href="/reports"         class="nav-item"><span>📊</span> View Reports</a>
+    <a href="/budget"          class="nav-item"><span>🎯</span> Set Budget</a>
+  </div>
+  <div class="main">
+    <div class="page-title">Add Transaction</div>
+    <div class="page-sub">Log a new income or expense entry</div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}{% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}{% endif %}
+    {% endwith %}
+    <div class="form-card">
+      <div class="type-toggle">
+        <button type="button" class="type-btn inc" id="btn-inc" onclick="setType('income')">+ Income</button>
+        <button type="button" class="type-btn"     id="btn-exp" onclick="setType('expense')">- Expense</button>
+      </div>
+      <form method="POST" action="/add_transaction">
+        <input type="hidden" name="type" id="tx-type" value="income" />
+        <div class="f-group">
+          <label class="f-label">Amount (₹)</label>
+          <input class="f-input" name="amount" type="number" min="1" step="0.01" placeholder="e.g. 500" required />
+        </div>
+        <div class="f-group">
+          <label class="f-label">Category</label>
+          <select class="f-select" name="category" id="cat-select">
+            <option value="Salary">💼 Salary</option>
+            <option value="Others">📦 Others</option>
+          </select>
+        </div>
+        <div class="f-group">
+          <label class="f-label">Description</label>
+          <input class="f-input" name="description" type="text" placeholder="e.g. Monthly salary" required />
+        </div>
+        <div class="f-group">
+          <label class="f-label">Date</label>
+          <input class="f-input" name="date" type="date" required />
+        </div>
+        <button type="submit" class="submit-btn">Add Transaction →</button>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+  document.querySelector('input[name="date"]').valueAsDate = new Date();
+  function setType(t) {
+    document.getElementById('tx-type').value = t;
+    document.getElementById('btn-inc').className = 'type-btn' + (t==='income' ? ' inc' : '');
+    document.getElementById('btn-exp').className = 'type-btn' + (t==='expense' ? ' exp' : '');
+    var cat = document.getElementById('cat-select');
+    cat.innerHTML = t === 'income'
+      ? '<option value="Salary">💼 Salary</option><option value="Others">📦 Others</option>'
+      : '<option value="Food">🍔 Food</option><option value="Travel">🚗 Travel</option><option value="Bills">💡 Bills</option><option value="Shopping">🛍 Shopping</option><option value="Others">📦 Others</option>';
+  }
+</script>
+</body>
+</html>
