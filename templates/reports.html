@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reports — Money Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    :root{--green:#00c896;--red:#ff5e72;--amber:#ffb347;--bg:#0b0f1a;--surf:#131826;--card:#1a2035;--bdr:#252d45;--txt:#e8eaf6;--muted:#6b7599;}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;display:flex;flex-direction:column;}
+    .topnav{display:flex;justify-content:space-between;align-items:center;padding:14px 28px;background:var(--surf);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:10;}
+    .logo{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--green);}
+    .logo span{color:var(--txt);}
+    .nav-right{display:flex;align-items:center;gap:14px;}
+    .nav-email{font-size:12px;color:var(--muted);}
+    .btn-logout{padding:7px 16px;border:1px solid var(--bdr);background:transparent;color:var(--txt);border-radius:8px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+    .layout{display:flex;flex:1;}
+    .sidebar{width:200px;background:var(--surf);border-right:1px solid var(--bdr);padding:24px 0;position:sticky;top:53px;height:calc(100vh - 53px);}
+    .sidebar-label{font-size:10px;color:var(--muted);padding:0 20px;margin:12px 0 6px;letter-spacing:1px;text-transform:uppercase;display:block;}
+    .nav-item{display:flex;align-items:center;gap:11px;padding:10px 20px;font-size:13px;color:var(--muted);cursor:pointer;border-left:3px solid transparent;text-decoration:none;transition:all 0.15s;}
+    .nav-item:hover{color:var(--txt);background:rgba(255,255,255,0.03);}
+    .nav-item.active{color:var(--green);border-left-color:var(--green);background:rgba(0,200,150,0.06);}
+    .main{flex:1;padding:28px 32px;}
+    .page-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:4px;}
+    .page-sub{font-size:12px;color:var(--muted);margin-bottom:24px;}
+    .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;}
+    .stat-card{background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:18px 20px;}
+    .stat-lbl{font-size:12px;color:var(--muted);margin-bottom:8px;}
+    .stat-val{font-family:'Syne',sans-serif;font-size:24px;font-weight:700;}
+    .stat-val.white{color:var(--txt);} .stat-val.green{color:var(--green);} .stat-val.red{color:var(--red);}
+    .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .chart-card{background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:20px;}
+    .chart-title{font-size:13px;color:var(--muted);margin-bottom:14px;}
+    .empty{text-align:center;padding:40px;color:var(--muted);font-size:13px;}
+    canvas{max-height:220px;}
+  </style>
+</head>
+<body>
+<div class="topnav">
+  <div class="logo">Money<span>Manager</span></div>
+  <div class="nav-right">
+    <span class="nav-email">{{ user_email }}</span>
+    <a href="/logout"><button class="btn-logout">Logout</button></a>
+  </div>
+</div>
+<div class="layout">
+  <div class="sidebar">
+    <span class="sidebar-label">Menu</span>
+    <a href="/dashboard"       class="nav-item"><span>🏠</span> Dashboard</a>
+    <a href="/add_transaction" class="nav-item"><span>➕</span> Add Transaction</a>
+    <a href="/reports"         class="nav-item active"><span>📊</span> View Reports</a>
+    <a href="/budget"          class="nav-item"><span>🎯</span> Set Budget</a>
+  </div>
+  <div class="main">
+    <div class="page-title">Reports & Analytics</div>
+    <div class="page-sub">Your spending breakdown and trends</div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-lbl">Total Income</div><div class="stat-val green">₹{{ '{:,.0f}'.format(income) }}</div></div>
+      <div class="stat-card"><div class="stat-lbl">Total Expenses</div><div class="stat-val red">₹{{ '{:,.0f}'.format(expenses) }}</div></div>
+      <div class="stat-card"><div class="stat-lbl">Net Balance</div><div class="stat-val white">₹{{ '{:,.0f}'.format(balance) }}</div></div>
+    </div>
+    {% if cat_data %}
+    <div class="chart-grid">
+      <div class="chart-card">
+        <div class="chart-title">Spending by category</div>
+        <canvas id="catChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Income vs Expense</div>
+        <canvas id="pieChart"></canvas>
+      </div>
+      {% if monthly_data %}
+      <div class="chart-card" style="grid-column:1/-1;">
+        <div class="chart-title">Monthly expenses</div>
+        <canvas id="monthChart"></canvas>
+      </div>
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="empty">No transactions yet. <a href="/add_transaction" style="color:var(--green);">Add one →</a></div>
+    {% endif %}
+  </div>
+</div>
+<script>
+  Chart.defaults.color = '#6b7599';
+  Chart.defaults.borderColor = '#252d45';
+  var catLabels  = {{ cat_data | map(attribute='category') | list | tojson }};
+  var catValues  = {{ cat_data | map(attribute='total')    | list | tojson }};
+  var monthLbls  = {{ monthly_data | map(attribute='month')| list | tojson }};
+  var monthVals  = {{ monthly_data | map(attribute='total')| list | tojson }};
+  var income     = {{ income }};
+  var expenses   = {{ expenses }};
+  var colors = ['#00c896','#4fc3f7','#ffb347','#c084fc','#ff5e72','#6b7599'];
+
+  if(catLabels.length){
+    new Chart(document.getElementById('catChart'), {
+      type: 'bar',
+      data: { labels: catLabels, datasets:[{ data: catValues, backgroundColor: colors.slice(0,catLabels.length), borderRadius: 6, borderSkipped: false }]},
+      options: { plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false}}, y:{grid:{color:'#252d45'}} } }
+    });
+    new Chart(document.getElementById('pieChart'), {
+      type: 'doughnut',
+      data: { labels:['Income','Expense'], datasets:[{ data:[income,expenses], backgroundColor:['#00c896','#ff5e72'], borderWidth:0, hoverOffset:4 }]},
+      options: { plugins:{legend:{position:'bottom', labels:{color:'#e8eaf6',padding:16}}} }
+    });
+  }
+  if(monthLbls.length){
+    new Chart(document.getElementById('monthChart'), {
+      type: 'bar',
+      data: { labels: monthLbls, datasets:[{ label:'Expenses', data: monthVals, backgroundColor:'#00c896', borderRadius:6, borderSkipped:false }]},
+      options: { plugins:{legend:{display:false}}, scales:{ x:{grid:{display:false}}, y:{grid:{color:'#252d45'}} } }
+    });
+  }
+</script>
+</body>
+</html>

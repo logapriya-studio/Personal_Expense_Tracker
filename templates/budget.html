@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Budget — Money Manager</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    :root{--green:#00c896;--red:#ff5e72;--amber:#ffb347;--bg:#0b0f1a;--surf:#131826;--card:#1a2035;--bdr:#252d45;--txt:#e8eaf6;--muted:#6b7599;}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;display:flex;flex-direction:column;}
+    .topnav{display:flex;justify-content:space-between;align-items:center;padding:14px 28px;background:var(--surf);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:10;}
+    .logo{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--green);}
+    .logo span{color:var(--txt);}
+    .nav-right{display:flex;align-items:center;gap:14px;}
+    .nav-email{font-size:12px;color:var(--muted);}
+    .btn-logout{padding:7px 16px;border:1px solid var(--bdr);background:transparent;color:var(--txt);border-radius:8px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+    .layout{display:flex;flex:1;}
+    .sidebar{width:200px;background:var(--surf);border-right:1px solid var(--bdr);padding:24px 0;position:sticky;top:53px;height:calc(100vh - 53px);}
+    .sidebar-label{font-size:10px;color:var(--muted);padding:0 20px;margin:12px 0 6px;letter-spacing:1px;text-transform:uppercase;display:block;}
+    .nav-item{display:flex;align-items:center;gap:11px;padding:10px 20px;font-size:13px;color:var(--muted);cursor:pointer;border-left:3px solid transparent;text-decoration:none;transition:all 0.15s;}
+    .nav-item:hover{color:var(--txt);background:rgba(255,255,255,0.03);}
+    .nav-item.active{color:var(--green);border-left-color:var(--green);background:rgba(0,200,150,0.06);}
+    .main{flex:1;padding:28px 32px;}
+    .page-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:4px;}
+    .page-sub{font-size:12px;color:var(--muted);margin-bottom:20px;}
+    .flash{padding:10px 16px;border-radius:10px;font-size:13px;margin-bottom:14px;}
+    .flash.success{background:rgba(0,200,150,0.1);color:var(--green);border:1px solid rgba(0,200,150,0.2);}
+    .flash.error{background:rgba(255,94,114,0.1);color:var(--red);border:1px solid rgba(255,94,114,0.2);}
+    .alert-banner{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:10px;}
+    .alert-danger{background:rgba(255,94,114,0.1);color:var(--red);border:1px solid rgba(255,94,114,0.2);}
+    .alert-warn{background:rgba(255,179,71,0.1);color:var(--amber);border:1px solid rgba(255,179,71,0.25);}
+    .alert-safe{background:rgba(0,200,150,0.1);color:var(--green);border:1px solid rgba(0,200,150,0.2);}
+    .budget-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:24px;}
+    .budget-card{background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:18px 20px;}
+    .bud-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+    .bud-cat{font-size:14px;font-weight:500;color:var(--txt);}
+    .bud-pct{font-size:13px;font-weight:700;}
+    .bud-track{height:8px;background:var(--bdr);border-radius:4px;overflow:hidden;margin-bottom:8px;}
+    .bud-fill{height:100%;border-radius:4px;transition:width 0.6s ease;}
+    .bud-amounts{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);}
+    .set-form{background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:22px;}
+    .form-title{font-size:14px;font-weight:500;color:var(--txt);margin-bottom:16px;}
+    .form-row{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;}
+    .f-group{display:flex;flex-direction:column;gap:5px;}
+    .f-label{font-size:11px;color:#9aa5c4;}
+    .f-input,.f-select{padding:10px 13px;background:var(--surf);border:1.5px solid var(--bdr);border-radius:10px;color:var(--txt);font-size:13px;outline:none;font-family:'DM Sans',sans-serif;transition:border-color 0.2s;}
+    .f-input:focus,.f-select:focus{border-color:var(--green);}
+    .f-select option{background:var(--surf);}
+    .submit-btn{padding:10px 20px;background:var(--green);color:#0b1a14;border:none;border-radius:10px;font-size:13px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;white-space:nowrap;}
+    .submit-btn:hover{background:#00a87e;}
+    .empty{text-align:center;padding:32px;color:var(--muted);font-size:13px;}
+  </style>
+</head>
+<body>
+<div class="topnav">
+  <div class="logo">Money<span>Manager</span></div>
+  <div class="nav-right">
+    <span class="nav-email">{{ user_email }}</span>
+    <a href="/logout"><button class="btn-logout">Logout</button></a>
+  </div>
+</div>
+<div class="layout">
+  <div class="sidebar">
+    <span class="sidebar-label">Menu</span>
+    <a href="/dashboard"       class="nav-item"><span>🏠</span> Dashboard</a>
+    <a href="/add_transaction" class="nav-item"><span>➕</span> Add Transaction</a>
+    <a href="/reports"         class="nav-item"><span>📊</span> View Reports</a>
+    <a href="/budget"          class="nav-item active"><span>🎯</span> Set Budget</a>
+  </div>
+  <div class="main">
+    <div class="page-title">Budget Manager</div>
+    <div class="page-sub">Set monthly limits and track your spending</div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}{% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}{% endif %}
+    {% endwith %}
+
+    {% if budget_info %}
+      {% for b in budget_info %}
+        {% if b.status == 'danger' %}
+          <div class="alert-banner alert-danger">⚠ {{ b.category }} budget exceeded! Spent ₹{{ '{:,.0f}'.format(b.spent) }} of ₹{{ '{:,.0f}'.format(b.limit) }}</div>
+        {% elif b.status == 'warning' %}
+          <div class="alert-banner alert-warn">⚡ {{ b.category }} at {{ b.pct }}% — approaching limit!</div>
+        {% endif %}
+      {% endfor %}
+      {% if budget_info | selectattr('status', 'equalto', 'danger') | list | length == 0
+          and budget_info | selectattr('status', 'equalto', 'warning') | list | length == 0 %}
+        <div class="alert-banner alert-safe">✓ All budgets are within limits. Great job!</div>
+      {% endif %}
+
+      <div class="budget-grid">
+        {% for b in budget_info %}
+        {% set color = '#ff5e72' if b.status == 'danger' else '#ffb347' if b.status == 'warning' else '#00c896' %}
+        <div class="budget-card">
+          <div class="bud-header">
+            <span class="bud-cat">
+              {% if b.category == 'Food' %}🍔{% elif b.category == 'Travel' %}🚗{% elif b.category == 'Bills' %}💡{% elif b.category == 'Shopping' %}🛍{% else %}📦{% endif %}
+              {{ b.category }}
+            </span>
+            <span class="bud-pct" style="color:{{ color }}">{{ b.pct }}%</span>
+          </div>
+          <div class="bud-track"><div class="bud-fill" style="width:{{ b.pct }}%;background:{{ color }}"></div></div>
+          <div class="bud-amounts"><span>₹{{ '{:,.0f}'.format(b.spent) }} spent</span><span>Limit: ₹{{ '{:,.0f}'.format(b.limit) }}</span></div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">No budgets set yet. Use the form below to add one.</div>
+    {% endif %}
+
+    <div class="set-form">
+      <div class="form-title">Set / Update Budget Limit</div>
+      <form method="POST" action="/budget">
+        <div class="form-row">
+          <div class="f-group">
+            <label class="f-label">Category</label>
+            <select class="f-select" name="category">
+              <option>Food</option><option>Travel</option><option>Bills</option><option>Shopping</option><option>Others</option>
+            </select>
+          </div>
+          <div class="f-group">
+            <label class="f-label">Monthly Limit (₹)</label>
+            <input class="f-input" name="limit" type="number" min="1" placeholder="e.g. 3000" required />
+          </div>
+          <button type="submit" class="submit-btn">Set Limit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+</body>
+</html>
